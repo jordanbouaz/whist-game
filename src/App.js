@@ -13,16 +13,15 @@ const WhistGameLobby = () => {
   const [currentGame, setCurrentGame] = useState(null);
   const [newGameName, setNewGameName] = useState('');
   const [error, setError] = useState('');
-  const [serverStatus, setServerStatus] = useState('');
-  
+  const [serverStatus, setServerStatus] = useState('Connecting...');
+
   useEffect(() => {
-    // Test server connection
     fetch(`${process.env.REACT_APP_BACKEND_URL}/api/test`)
       .then(response => response.json())
-      .then(data => setServerStatus(data.message))
+      .then(data => setServerStatus(`${data.message} (Games: ${data.gamesCount})`))
       .catch(error => setServerStatus('Error connecting to server'));
   }, []);
-  
+
   useEffect(() => {
     if (isNameSet) {
       console.log('Connecting to server...');
@@ -33,8 +32,7 @@ const WhistGameLobby = () => {
 
       newSocket.on('connect', () => {
         console.log('Connected to server');
-        setServerStatus('Socket connected');
-
+        setServerStatus('Connected to server');
       });
 
       newSocket.on('gameListUpdate', (updatedGames) => {
@@ -49,6 +47,11 @@ const WhistGameLobby = () => {
 
       newSocket.on('playerJoined', (game) => {
         console.log('Player joined:', game);
+        setCurrentGame(game);
+      });
+
+      newSocket.on('playerLeft', (game) => {
+        console.log('Player left:', game);
         setCurrentGame(game);
       });
 
@@ -91,6 +94,14 @@ const WhistGameLobby = () => {
     socket.emit('joinGame', gameId);
   };
 
+  const handleLeaveGame = () => {
+    if (currentGame) {
+      console.log('Leaving game:', currentGame.id);
+      socket.emit('leaveGame', currentGame.id);
+      setCurrentGame(null);
+    }
+  };
+
   const renderLobby = () => (
     <>
       <Card className="mb-4">
@@ -120,13 +131,13 @@ const WhistGameLobby = () => {
             <ul>
               {games.map((game) => (
                 <li key={game.id} className="mb-2 p-2 border rounded">
-                  {game.name} ({game.players.length}/{game.maxPlayers} players)
+                  {game.name} ({game.players}/{game.maxPlayers} players)
                   <Button 
                     onClick={() => handleJoinGame(game.id)} 
                     className="ml-2"
-                    disabled={game.players.length === game.maxPlayers || game.players.some(p => p.name === playerName)}
+                    disabled={game.players === game.maxPlayers}
                   >
-                    {game.players.some(p => p.name === playerName) ? 'Joined' : 'Join'}
+                    Join
                   </Button>
                 </li>
               ))}
@@ -148,6 +159,7 @@ const WhistGameLobby = () => {
         {currentGame.players.length === currentGame.maxPlayers && (
           <p>Game is ready to start!</p>
         )}
+        <Button onClick={handleLeaveGame} className="mt-2">Leave Game</Button>
       </CardContent>
     </Card>
   );
@@ -159,7 +171,7 @@ const WhistGameLobby = () => {
       <Alert className="mb-4">
         <AlertDescription>Server Status: {serverStatus}</AlertDescription>
       </Alert>
-      
+
       {error && (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>{error}</AlertDescription>
@@ -189,7 +201,6 @@ const WhistGameLobby = () => {
     </div>
   );
 };
-
 
 function App() {
   return (
