@@ -12,34 +12,43 @@ const WhistGameLobby = () => {
   const [games, setGames] = useState([]);
   const [currentGame, setCurrentGame] = useState(null);
   const [newGameName, setNewGameName] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (isNameSet) {
+      console.log('Connecting to server...');
       const newSocket = io(process.env.REACT_APP_BACKEND_URL, {
         query: { playerName }
       });
       setSocket(newSocket);
 
+      newSocket.on('connect', () => {
+        console.log('Connected to server');
+      });
+
       newSocket.on('gameListUpdate', (updatedGames) => {
+        console.log('Received game list update:', updatedGames);
         setGames(updatedGames);
       });
 
       newSocket.on('gameCreated', (game) => {
+        console.log('Game created:', game);
         setCurrentGame(game);
       });
 
       newSocket.on('playerJoined', (game) => {
+        console.log('Player joined:', game);
         setCurrentGame(game);
       });
 
       newSocket.on('gameReady', (game) => {
+        console.log('Game ready to start:', game);
         setCurrentGame(game);
-        // Here you would transition to the actual game component
-        console.log('Game is ready to start!');
       });
 
-      newSocket.on('joinError', (error) => {
-        alert(error);
+      newSocket.on('joinError', (errorMessage) => {
+        console.error('Join error:', errorMessage);
+        setError(errorMessage);
       });
 
       return () => newSocket.close();
@@ -48,22 +57,26 @@ const WhistGameLobby = () => {
 
   const handleSetName = () => {
     if (playerName.trim() === '') {
-      alert('Please enter a valid name');
+      setError('Please enter a valid name');
       return;
     }
     setIsNameSet(true);
+    setError('');
   };
 
   const handleCreateGame = () => {
     if (newGameName.trim() === '') {
-      alert('Please enter a game name');
+      setError('Please enter a game name');
       return;
     }
+    console.log('Creating game:', newGameName);
     socket.emit('createGame', newGameName);
     setNewGameName('');
+    setError('');
   };
 
   const handleJoinGame = (gameId) => {
+    console.log('Attempting to join game:', gameId);
     socket.emit('joinGame', gameId);
   };
 
@@ -132,6 +145,12 @@ const WhistGameLobby = () => {
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-4">Whist Game Lobby</h1>
       
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
       {!isNameSet ? (
         <Card>
           <CardHeader>
@@ -155,6 +174,7 @@ const WhistGameLobby = () => {
     </div>
   );
 };
+
 
 function App() {
   return (
