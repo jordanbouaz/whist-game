@@ -38,6 +38,10 @@ const WhistGameLobby = () => {
         console.log('Game is ready to start!');
       });
 
+      newSocket.on('joinError', (error) => {
+        alert(error);
+      });
+
       return () => newSocket.close();
     }
   }, [isNameSet, playerName]);
