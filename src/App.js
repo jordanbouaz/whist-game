@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
 import { Alert, AlertDescription } from './components/ui/alert';
+import io from 'socket.io-client';
 
 const WhistGameLobby = () => {
   const [playerName, setPlayerName] = React.useState('');
@@ -69,6 +70,17 @@ const WhistGameLobby = () => {
     setCurrentGame(null);
   };
 
+  useEffect(() => {
+    const socket = const socket = io(process.env.REACT_APP_BACKEND_URL);
+    socket.on('connect', () => {
+      console.log('Connected to server');
+    });
+  
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+  
   const renderLobby = () => (
     <>
       <Card className="mb-4">
