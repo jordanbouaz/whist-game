@@ -13,7 +13,16 @@ const WhistGameLobby = () => {
   const [currentGame, setCurrentGame] = useState(null);
   const [newGameName, setNewGameName] = useState('');
   const [error, setError] = useState('');
-
+  const [serverStatus, setServerStatus] = useState('');
+  
+  useEffect(() => {
+    // Test server connection
+    fetch(`${process.env.REACT_APP_BACKEND_URL}/api/test`)
+      .then(response => response.json())
+      .then(data => setServerStatus(data.message))
+      .catch(error => setServerStatus('Error connecting to server'));
+  }, []);
+  
   useEffect(() => {
     if (isNameSet) {
       console.log('Connecting to server...');
@@ -24,6 +33,8 @@ const WhistGameLobby = () => {
 
       newSocket.on('connect', () => {
         console.log('Connected to server');
+        setServerStatus('Socket connected');
+
       });
 
       newSocket.on('gameListUpdate', (updatedGames) => {
@@ -144,6 +155,10 @@ const WhistGameLobby = () => {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-4">Whist Game Lobby</h1>
+      
+      <Alert className="mb-4">
+        <AlertDescription>Server Status: {serverStatus}</AlertDescription>
+      </Alert>
       
       {error && (
         <Alert variant="destructive" className="mb-4">
