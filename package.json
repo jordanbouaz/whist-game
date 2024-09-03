@@ -2,6 +2,7 @@
   "name": "whist-game",
   "version": "0.1.0",
   "private": true,
+  "homepage": ".",
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-slot": "^1.1.0",
